@@ -12,6 +12,7 @@ spacy = "^2.3.5"
 textacy = "^0.10.1"
 requests-html = "^0.10.0"
 ipykernel = "^5.4.2"
+black = "^20.8b1"
 
 [tool.poetry.dev-dependencies]
 jupyter = "^1.0.0"

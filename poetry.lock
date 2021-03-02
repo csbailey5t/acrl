@@ -80,7 +80,7 @@ html5lib = ["html5lib"]
 lxml = ["lxml"]
 
 [[package]]
-category = "dev"
+category = "main"
 description = "The uncompromising code formatter."
 name = "black"
 optional = false
@@ -180,7 +180,7 @@ python-versions = "*"
 version = "3.0.4"
 
 [[package]]
-category = "dev"
+category = "main"
 description = "Composable command line interface toolkit"
 name = "click"
 optional = false
@@ -522,7 +522,7 @@ python-versions = "*"
 version = "1.0.5"
 
 [[package]]
-category = "dev"
+category = "main"
 description = "Experimental type system extensions for programs checked with the mypy typechecker."
 name = "mypy-extensions"
 optional = false
@@ -720,7 +720,7 @@ version = "0.7.1"
 testing = ["docopt", "pytest (>=3.0.7)"]
 
 [[package]]
-category = "dev"
+category = "main"
 description = "Utility library for gitignore style pattern matching of file paths."
 name = "pathspec"
 optional = false
@@ -973,7 +973,7 @@ python-versions = "*"
 version = "1.9.0"
 
 [[package]]
-category = "dev"
+category = "main"
 description = "Alternative regular expression module, to replace re."
 name = "regex"
 optional = false
@@ -1208,7 +1208,7 @@ python-versions = ">=3.5"
 version = "2.1.0"
 
 [[package]]
-category = "dev"
+category = "main"
 description = "Python Library for Tom's Obvious, Minimal Language"
 name = "toml"
 optional = false
@@ -1257,7 +1257,7 @@ ipython-genutils = "*"
 test = ["pytest"]
 
 [[package]]
-category = "dev"
+category = "main"
 description = "a fork of Python 2 and 3 ast modules with type comment support"
 name = "typed-ast"
 optional = false
@@ -1265,7 +1265,7 @@ python-versions = "*"
 version = "1.4.1"
 
 [[package]]
-category = "dev"
+category = "main"
 description = "Backported and Experimental Type Hints for Python 3.5+"
 name = "typing-extensions"
 optional = false
@@ -1340,7 +1340,7 @@ version = "3.5.1"
 notebook = ">=4.4.1"
 
 [metadata]
-content-hash = "9db9bf590f5ac9c10a53d17f6f481107850e6182b4411a6c00a4d229ce561001"
+content-hash = "f9b9b9525f89a0f9207737675a774bb12ef13d91c48f3250295796a6352f5644"
 lock-version = "1.0"
 python-versions = "^3.9"
 
