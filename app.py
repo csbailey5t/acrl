@@ -27,9 +27,12 @@ def read_and_clean_data(fn):
     data["year"] = data["id"].str.split("-").str.get(0)
 
     # read second sheet, with abstracts and combine with metadata
-    abstracts = pd.read_excel(fn, 1)
+    abstracts = pd.read_excel(fn, 1, dtype={"Abstract": str})
     combined = data.merge(abstracts, left_on="id", right_on="ID")
-
+    combined.fillna(value={"Abstract": "NOTHING"})
+    combined["lower_abstract"] = [
+        a.lower() if type(a) == str else a for a in combined["Abstract"]
+    ]
     return combined
 
 
@@ -50,10 +53,9 @@ def main():
     search_term = st.sidebar.text_input("Search for a word or phrase: ")
 
     # Filter dataframe based on search term
-    # TODO: lowercase everything for better search
     if search_term:
-        results = data[data["Abstract"].str.contains(search_term, na=False)]
-        st.write(results[["year", "id", "title", "Abstract"]])
+        results = data[data["lower_abstract"].str.contains(search_term, na=False)]
+        st.write(results[["year", "id", "title", "Abstract", "lower_abstract"]])
 
         data_for_chart = (
             results["year"]
@@ -63,11 +65,8 @@ def main():
             .rename(columns={"index": "year", "year": "count"})
         )
 
-        fig = plt.figure(figsize=(10, 10))
-        # results["year"].value_counts().sort_index().plot(
-        #     kind="bar",
-        # )
         # create seaborn bar plot from year column
+        fig = plt.figure(figsize=(10, 10))
         sns.barplot(x="year", y="count", data=data_for_chart)
         st.pyplot(fig)
 
