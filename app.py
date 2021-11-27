@@ -107,24 +107,27 @@ def main():
     #     "Select the year you're interested in: ", years
     # )
 
-    # Sidebar search box
-    search_term = st.sidebar.text_input("Search for a word or phrase: ")
-
-    # sidebar num topics selector
-    num_topics = st.sidebar.slider(
-        "Select the number of topics you're interested in: ",
-        min_value=10,
-        max_value=100,
-        step=5,
-        value=30,
-    )
-
     # render pages based on page selectbox
     if page == "Text search":
+        # Sidebar search box
+        search_term = st.sidebar.text_input("Search for a word or phrase: ")
         text_search(data, search_term)
     elif page == "HDP model":
         hdp_model(corpus, dictionary)
     elif page == "LDA model":
+        # sidebar num topics selector
+        num_topics = st.sidebar.slider(
+            "Select the number of topics you're interested in: ",
+            min_value=10,
+            max_value=100,
+            step=5,
+            value=30,
+        )
+
+        # sidebar text box for custom stopwords
+        custom_stopwords = st.sidebar.text_input(
+            "Enter custom stopwords, separated by commas: ", value="library, libraries"
+        )
         lda_model(corpus, dictionary, num_topics)
 
 
