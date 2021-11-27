@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 from collections import defaultdict
 from gensim import corpora, models
 from glob import glob
-from nltk.corpus import stopwords
 
 # TODO
 # - [ ] Move cleaning and loading code to a separate Jupyter notebook
