@@ -136,7 +136,7 @@ def visualize_topics(data_df, corpus, dictionary, num_topics):
         .encode(x="x", y="y", color="hue", tooltip=["hue", "title", "year"])
         .interactive()
     )
-    st.altair_chart(c)
+    st.altair_chart(c, use_container_width=True)
 
 
 def main():
