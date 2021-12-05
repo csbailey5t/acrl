@@ -14,10 +14,7 @@ from gensim import corpora, models
 from glob import glob
 from sklearn.manifold import TSNE
 
-from bokeh.io import show
-from bokeh.models import ColumnDataSource, HoverTool
-from bokeh.palettes import viridis
-from bokeh.plotting import figure
+import altair as alt
 
 
 # TODO
@@ -119,6 +116,27 @@ def visualize_topics(data_df, corpus, dictionary, num_topics):
         df.loc[doc_id[i]] = new_row
 
     st.write(df)
+
+    tsne = TSNE(n_components=2)
+    lda_data = df.drop(["doc_id", "year", "title"], axis=1).to_numpy()
+    tsne_embedding = tsne.fit_transform(lda_data)
+
+    # We'll turn our two dimensional array into a pandas dataframe for ease of use in visualization
+    # We'll also add in a hue column that maps to the most significant topic for each document. `argmax` works here because the columns of the array correspond to the topics in our model
+    tsne_df = pd.DataFrame(tsne_embedding, columns=["x", "y"])
+    tsne_df["hue"] = lda_data.argmax(axis=1)
+
+    # merge the tsne dataframe with the original dataframe
+    merged_df = pd.concat([df[["title", "year"]].reset_index(), tsne_df], axis=1)
+    # st.write(tsne_df)
+    # st.write(df)
+    c = (
+        alt.Chart(merged_df)
+        .mark_circle(size=10)
+        .encode(x="x", y="y", color="hue", tooltip=["hue", "title", "year"])
+        .interactive()
+    )
+    st.altair_chart(c)
 
 
 def main():
