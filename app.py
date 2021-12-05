@@ -12,9 +12,18 @@ import matplotlib.pyplot as plt
 from collections import defaultdict
 from gensim import corpora, models
 from glob import glob
+from sklearn.manifold import TSNE
+
+from bokeh.io import show
+from bokeh.models import ColumnDataSource, HoverTool
+from bokeh.palettes import viridis
+from bokeh.plotting import figure
+
 
 # TODO
 # - [ ] Move cleaning and loading code to a separate Jupyter notebook
+# - [ ] Visualize topics over time
+# - [ ] Vectorize w/ CountVectorizer and map with tsne
 
 
 @st.cache
@@ -81,6 +90,37 @@ def lda_model(corpus, dictionary, num_topics):
     components.v1.html(html_string, width=1280, height=1024)
 
 
+def visualize_topics(data_df, corpus, dictionary, num_topics):
+    """
+    Visualizes topics through tsne
+    """
+    # drop rows from the dataframe where lower_absract is NA
+    data_df = data_df.dropna(subset=["lower_abstract"])
+    doc_id = data_df["id"].tolist()
+    year = data_df["year"].tolist()
+    title = data_df["title"].tolist()
+
+    lda = models.LdaModel(corpus, id2word=dictionary, num_topics=num_topics)
+
+    # Create headers for the DataFrame
+    headers = ["doc_id", "year", "title"]
+    for i in range(num_topics):
+        headers.append(f"topic-{i}")
+
+    # Create a DataFrame with the headers
+    df = pd.DataFrame(columns=headers)
+
+    # Generally, building pandas DataFrames row by row is not a best practice, but it makes sense here given the gensim function that gives us the topic distribution for a document
+    for i in range(len(doc_id)):
+        new_row = [doc_id[i], year[i], title[i]]
+
+        for _, prob in lda.get_document_topics(corpus[i], minimum_probability=0):
+            new_row.append(prob)
+        df.loc[doc_id[i]] = new_row
+
+    st.write(df)
+
+
 def main():
     st.title("ACRL Conference Analysis")
 
@@ -100,7 +140,7 @@ def main():
 
     # select page
     page = st.sidebar.selectbox(
-        "Select page", ["Text search", "HDP model", "LDA model"]
+        "Select page", ["Text search", "HDP model", "LDA model", "Topic visualization"]
     )
 
     # selected_year = st.sidebar.selectbox(
@@ -129,6 +169,15 @@ def main():
             "Enter custom stopwords, separated by commas: ", value="library, libraries"
         )
         lda_model(corpus, dictionary, num_topics)
+    elif page == "Topic visualization":
+        num_topics = st.sidebar.slider(
+            "Select the number of topics you're interested in: ",
+            min_value=10,
+            max_value=100,
+            step=5,
+            value=30,
+        )
+        visualize_topics(data, corpus, dictionary, num_topics)
 
 
 if __name__ == "__main__":
