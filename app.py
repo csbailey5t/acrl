@@ -21,6 +21,8 @@ import altair as alt
 # - [ ] Move cleaning and loading code to a separate Jupyter notebook
 # - [ ] Visualize topics over time
 # - [ ] Vectorize w/ CountVectorizer and map with tsne
+# - [ ] Add legend with top words for topic
+# - [ ] Run value counts on top topic - what's the distribution?
 
 
 @st.cache
@@ -80,24 +82,27 @@ def hdp_model(corpus, dictionary):
     components.v1.html(html_string, width=1280, height=1024)
 
 
-def lda_model(corpus, dictionary, num_topics):
+def lda_model(data, corpus, dictionary, num_topics):
     lda = models.LdaModel(corpus, id2word=dictionary, num_topics=num_topics)
+
+    # Visualize topics with pyLDAvis
     lda_data = gensimvis.prepare(lda, corpus, dictionary)
     html_string = pyLDAvis.prepared_data_to_html(lda_data)
     components.v1.html(html_string, width=1280, height=1024)
 
+    # Visualize documents w/ t-SNE
+    visualize_topics(data, corpus, lda, num_topics)
 
-def visualize_topics(data_df, corpus, dictionary, num_topics):
+
+def visualize_topics(data_df, corpus, model, num_topics):
     """
-    Visualizes topics through tsne
+    Visualizes documents through topic model & t-SNE
     """
     # drop rows from the dataframe where lower_absract is NA
     data_df = data_df.dropna(subset=["lower_abstract"])
     doc_id = data_df["id"].tolist()
     year = data_df["year"].tolist()
     title = data_df["title"].tolist()
-
-    lda = models.LdaModel(corpus, id2word=dictionary, num_topics=num_topics)
 
     # Create headers for the DataFrame
     headers = ["doc_id", "year", "title"]
@@ -111,10 +116,11 @@ def visualize_topics(data_df, corpus, dictionary, num_topics):
     for i in range(len(doc_id)):
         new_row = [doc_id[i], year[i], title[i]]
 
-        for _, prob in lda.get_document_topics(corpus[i], minimum_probability=0):
+        for _, prob in model.get_document_topics(corpus[i], minimum_probability=0):
             new_row.append(prob)
         df.loc[doc_id[i]] = new_row
 
+    st.subheader("Document table with topic proportions")
     st.write(df)
 
     tsne = TSNE(n_components=2)
@@ -128,13 +134,19 @@ def visualize_topics(data_df, corpus, dictionary, num_topics):
 
     # merge the tsne dataframe with the original dataframe
     merged_df = pd.concat([df[["title", "year"]].reset_index(), tsne_df], axis=1)
-    # st.write(tsne_df)
-    # st.write(df)
+
+    st.subheader("Visualization of documents through t-SNE")
     c = (
         alt.Chart(merged_df)
         .mark_circle(size=10)
-        .encode(x="x", y="y", color="hue", tooltip=["hue", "title", "year"])
+        .encode(
+            x="x",
+            y="y",
+            color=alt.Color("year:N", scale=alt.Scale(scheme="dark2")),
+            tooltip=["hue", "title", "year"],
+        )
         .interactive()
+        .properties(width=1280, height=1024)
     )
     st.altair_chart(c, use_container_width=True)
 
@@ -158,7 +170,7 @@ def main():
 
     # select page
     page = st.sidebar.selectbox(
-        "Select page", ["Text search", "HDP model", "LDA model", "Topic visualization"]
+        "Select page", ["Text search", "HDP model", "LDA model"]
     )
 
     # selected_year = st.sidebar.selectbox(
@@ -186,16 +198,7 @@ def main():
         custom_stopwords = st.sidebar.text_input(
             "Enter custom stopwords, separated by commas: ", value="library, libraries"
         )
-        lda_model(corpus, dictionary, num_topics)
-    elif page == "Topic visualization":
-        num_topics = st.sidebar.slider(
-            "Select the number of topics you're interested in: ",
-            min_value=10,
-            max_value=100,
-            step=5,
-            value=30,
-        )
-        visualize_topics(data, corpus, dictionary, num_topics)
+        lda_model(data, corpus, dictionary, num_topics)
 
 
 if __name__ == "__main__":
