@@ -150,6 +150,29 @@ def visualize_topics(data_df, corpus, model, num_topics):
     )
     st.altair_chart(c, use_container_width=True)
 
+    topic_summaries = []
+    print("{:20} {}".format("term", "frequency") + "\n")
+    for i in range(num_topics):
+        print("Topic " + str(i) + " |---------------------\n")
+        tmp = explore_topic(model, topic_number=i, topn=10, output=True)
+        topic_summaries += [tmp[:10]]
+    st.write(topic_summaries)
+
+
+# Show topic summaries to help interpret vis
+# TODO Integrate top 10 topic words into hover
+def explore_topic(lda_model, topic_number, topn, output=True):
+    """
+    accepts an ldamodel, a topic number and topn terms of interest
+    prints a formatted list of the topn terms
+    """
+    terms = []
+    for term, frequency in lda_model.show_topic(topic_number, topn=topn):
+        terms += [term]
+        if output:
+            print("{:20} {:.3f}".format(term, round(frequency, 3)))
+    return terms
+
 
 def main():
     st.title("ACRL Conference Analysis")
