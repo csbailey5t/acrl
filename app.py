@@ -23,6 +23,22 @@ import altair as alt
 # - [ ] Vectorize w/ CountVectorizer and map with tsne
 # - [ ] Add legend with top words for topic
 # - [ ] Run value counts on top topic - what's the distribution?
+# - [ ] Remove all the rows with "no abstract" from model
+
+# Add search by poster or presentation in stacked bars in text search; we're missing two years of posts
+
+# Thesis: do posters show trends before papers?
+# Need to check numbers of posters and presentations each year; normalize counts by year.
+# Get distrubtion of abstract length per year.
+
+# Technology through the years
+# staff development/professional development
+# different in topics between posts and programs
+# topic area changes through the years
+# which schools participate
+# variety of topics during the same conference
+
+# show topic 5 topics per abstract
 
 
 @st.cache
@@ -34,7 +50,7 @@ def load_data(fns):
     joined_data.to_csv("data_cleaned/combined.csv", index=False)
     return joined_data
 
-
+@st.cache
 def read_and_clean_data(fn):
     """
     This function reads the data from the file, and normalizes column names.
@@ -54,11 +70,19 @@ def read_and_clean_data(fn):
     ]
     return combined
 
+# Remove rows with no abstract in a dataframe
+def remove_no_abstract(data):
+    data = data[data["lower_abstract"] != "no abstract"]
+    data = data[data["lower_abstract"] != "No abstract"]
+    data = data[data["lower_abstract"] != "no abstract available"]
+    return data
+
 
 def text_search(data, search_term):
+    cleaned_data = remove_no_abstract(data)
     # Filter dataframe based on search term
     if search_term:
-        results = data[data["lower_abstract"].str.contains(search_term, na=False)]
+        results = cleaned_data[cleaned_data["lower_abstract"].str.contains(search_term, na=False)]
         st.write(results[["year", "id", "title", "Abstract"]])
 
         data_for_chart = (
@@ -203,7 +227,7 @@ def main():
     # render pages based on page selectbox
     if page == "Text search":
         # Sidebar search box
-        search_term = st.sidebar.text_input("Search for a word or phrase: ")
+        search_term = st.sidebar.text_input("Search abstracts for a word or phrase: ")
         text_search(data, search_term)
     elif page == "HDP model":
         hdp_model(corpus, dictionary)
