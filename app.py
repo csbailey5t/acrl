@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from collections import defaultdict
 from gensim import corpora, models
 from glob import glob
+from sklearn.feature_extraction.text import TfidfVectorizer 
 from sklearn.manifold import TSNE
 
 import altair as alt
@@ -20,10 +21,11 @@ import altair as alt
 # TODO
 # - [ ] Move cleaning and loading code to a separate Jupyter notebook
 # - [ ] Visualize topics over time
-# - [ ] Vectorize w/ CountVectorizer and map with tsne
+# - [ ] Vectorize w/ TfidfVectorizer and map with tsne
 # - [ ] Add legend with top words for topic
 # - [ ] Run value counts on top topic - what's the distribution?
-# - [ ] Remove all the rows with "no abstract" from model
+# - [x] Remove all the rows with "no abstract" from model
+# - [x] Remove custom stopwords
 
 # Add search by poster or presentation in stacked bars in text search; we're missing two years of posts
 
@@ -75,6 +77,7 @@ def remove_no_abstract(data):
     data = data[data["lower_abstract"] != "no abstract"]
     data = data[data["lower_abstract"] != "No abstract"]
     data = data[data["lower_abstract"] != "no abstract available"]
+    data = data.dropna(subset=["lower_abstract"])
     return data
 
 
@@ -97,6 +100,34 @@ def text_search(data, search_term):
         fig = plt.figure(figsize=(10, 10))
         sns.barplot(x="year", y="count", data=data_for_chart)
         st.pyplot(fig)
+
+
+# Define function that takes a dataframe, creates a tf-idf model, and visualizes it with t-SNE
+def visualize_tsne_model(data):
+    data = remove_no_abstract(data)
+    tfidf_vectorizer = TfidfVectorizer(stop_words="english")
+    tfidf_matrix = tfidf_vectorizer.fit_transform(data["lower_abstract"])
+    tsne = TSNE(n_components=2, verbose=1, random_state=0, n_iter=1000)
+    tsne_embedding = tsne.fit_transform(tfidf_matrix)
+
+    # visualize tsne_model with altair scatter plot
+    tsne_df = pd.DataFrame(tsne_embedding, columns=["x", "y"])
+
+    st.subheader("Visualization of document abstracts tfidf through t-SNE")
+    c = (
+        alt.Chart(tsne_df)
+        .mark_circle(size=10)
+        .encode(
+            x="x",
+            y="y",
+        )
+        .interactive()
+        .properties(width=1280, height=1024)
+    )
+    st.altair_chart(c, use_container_width=True)
+
+
+
 
 
 def hdp_model(corpus, dictionary):
@@ -217,7 +248,7 @@ def main():
 
     # select page
     page = st.sidebar.selectbox(
-        "Select page", ["Text search", "HDP model", "LDA model"]
+        "Select page", ["Text search", "Tfidf model", "HDP model", "LDA model"]
     )
 
     # selected_year = st.sidebar.selectbox(
@@ -229,6 +260,9 @@ def main():
         # Sidebar search box
         search_term = st.sidebar.text_input("Search abstracts for a word or phrase: ")
         text_search(data, search_term)
+    elif page == "Tfidf model":
+        st.subheader("Vectorize with Tf-idf and visualize with t-SNE")
+        visualize_tsne_model(data)
     elif page == "HDP model":
         hdp_model(corpus, dictionary)
     elif page == "LDA model":
@@ -241,10 +275,6 @@ def main():
             value=30,
         )
 
-        # sidebar text box for custom stopwords
-        custom_stopwords = st.sidebar.text_input(
-            "Enter custom stopwords, separated by commas: ", value="library, libraries"
-        )
         lda_model(data, corpus, dictionary, num_topics)
 
 
