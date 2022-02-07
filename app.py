@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 from collections import defaultdict
 from gensim import corpora, models
 from glob import glob
-from sklearn.feature_extraction.text import TfidfVectorizer 
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer 
 from sklearn.manifold import TSNE
 
 import altair as alt
@@ -21,11 +21,12 @@ import altair as alt
 # TODO
 # - [ ] Move cleaning and loading code to a separate Jupyter notebook
 # - [ ] Visualize topics over time
-# - [ ] Vectorize w/ TfidfVectorizer and map with tsne
+# - [x] Vectorize w/ TfidfVectorizer and map with tsne
 # - [ ] Add legend with top words for topic
 # - [ ] Run value counts on top topic - what's the distribution?
 # - [x] Remove all the rows with "no abstract" from model
 # - [x] Remove custom stopwords
+# - [ ] Audit to see what calculations can be saved, and not rerun
 
 # Add search by poster or presentation in stacked bars in text search; we're missing two years of posts
 
@@ -128,6 +129,29 @@ def visualize_tsne_model(data):
 
 
 
+# Define function that takes a dataframe, vectorizers by count, and visualizes it with t-SNE
+def visualize_count_vectors(data):
+    data = remove_no_abstract(data)
+    count_vectorizer = CountVectorizer(stop_words="english")
+    count_matrix = count_vectorizer.fit_transform(data["lower_abstract"])
+    tsne = TSNE(n_components=2, verbose=1, random_state=0, n_iter=1000)
+    tsne_embedding = tsne.fit_transform(count_matrix)
+
+    # visualize tsne_model with altair scatter plot
+    tsne_df = pd.DataFrame(tsne_embedding, columns=["x", "y"])
+
+    st.subheader("Visualization of document abstracts count vectors through t-SNE")
+    c = (
+        alt.Chart(tsne_df)
+        .mark_circle(size=10)
+        .encode(
+            x="x",
+            y="y",
+        )
+        .interactive()
+        .properties(width=1280, height=1024)
+    )
+    st.altair_chart(c, use_container_width=True)
 
 
 def hdp_model(corpus, dictionary):
@@ -248,7 +272,7 @@ def main():
 
     # select page
     page = st.sidebar.selectbox(
-        "Select page", ["Text search", "Tfidf model", "HDP model", "LDA model"]
+        "Select page", ["Text search", "Count vectors", "Tfidf model", "HDP model", "LDA model"]
     )
 
     # selected_year = st.sidebar.selectbox(
@@ -260,6 +284,9 @@ def main():
         # Sidebar search box
         search_term = st.sidebar.text_input("Search abstracts for a word or phrase: ")
         text_search(data, search_term)
+    elif page == "Count vectors":
+        st.subheader("Vectorize by count and visualize with t-SNE")
+        visualize_count_vectors(data)
     elif page == "Tfidf model":
         st.subheader("Vectorize with Tf-idf and visualize with t-SNE")
         visualize_tsne_model(data)
