@@ -258,13 +258,12 @@ def explore_topic(lda_model, topic_number, topn, output=True):
 # code pulled from https://huggingface.co/sentence-transformers/multi-qa-MiniLM-L6-cos-v1
 def find_similar_abstracts(data):
     st.subheader("Find similar abstracts")
-    st.write(data[["id", "title", "Abstract"]])
+    data_subset = data[["id", "title", "Abstract"]]
     abstract = st.text_area("Enter abstract to find similar abstracts", "")
     docs = data["lower_abstract"].tolist()
 
     model = SentenceTransformer("sentence-transformers/multi-qa-MiniLM-L6-cos-v1")
 
-    # TODO only run the following code if the user enters a sentence
     # TODO add a submit form 
     doc_emb = model.encode(docs)
 
@@ -272,11 +271,11 @@ def find_similar_abstracts(data):
         query_emb = model.encode(abstract)
 
         scores = util.dot_score(query_emb, doc_emb)[0].cpu().tolist()
-        doc_score_pairs = list(zip(docs, scores))
-        doc_score_pairs = sorted(doc_score_pairs, key=lambda x: x[1], reverse=True)
 
-        # TODO return not just abstract and score, but metadata from row
-        st.write(doc_score_pairs[:10])
+        # merge data subset with scores
+        merged_data = pd.concat([data_subset, pd.DataFrame({"score": scores})], axis=1)
+        # show top 10 results by score
+        st.write(merged_data.sort_values(by="score", ascending=False)[:10])
 
 
 def main():
@@ -290,6 +289,7 @@ def main():
     years = sorted(set(data["year"].tolist()))
 
     # load gensim corpus and dictionary
+    # TODO pull this into a function and cache it. 
     dictionary = corpora.Dictionary.load("acrl.dict")
     corpus = corpora.MmCorpus("acrl.mm")
 
