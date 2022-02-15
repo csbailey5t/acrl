@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 from collections import defaultdict
 from gensim import corpora, models
 from glob import glob
+from sentence_transformers import SentenceTransformer, util
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer 
 from sklearn.manifold import TSNE
 
@@ -253,6 +254,31 @@ def explore_topic(lda_model, topic_number, topn, output=True):
     return terms
 
 
+# Streamlit page to find similar abstracts through sentence similarity
+# code pulled from https://huggingface.co/sentence-transformers/multi-qa-MiniLM-L6-cos-v1
+def find_similar_abstracts(data):
+    st.subheader("Find similar abstracts")
+    st.write(data[["id", "title", "Abstract"]])
+    abstract = st.text_area("Enter abstract to find similar abstracts", "")
+    docs = data["lower_abstract"].tolist()
+
+    model = SentenceTransformer("sentence-transformers/multi-qa-MiniLM-L6-cos-v1")
+
+    # TODO only run the following code if the user enters a sentence
+    # TODO add a submit form 
+    doc_emb = model.encode(docs)
+
+    if abstract != "":
+        query_emb = model.encode(abstract)
+
+        scores = util.dot_score(query_emb, doc_emb)[0].cpu().tolist()
+        doc_score_pairs = list(zip(docs, scores))
+        doc_score_pairs = sorted(doc_score_pairs, key=lambda x: x[1], reverse=True)
+
+        # TODO return not just abstract and score, but metadata from row
+        st.write(doc_score_pairs[:10])
+
+
 def main():
     st.title("ACRL Conference Analysis")
 
@@ -272,7 +298,7 @@ def main():
 
     # select page
     page = st.sidebar.selectbox(
-        "Select page", ["Text search", "Count vectors", "Tfidf model", "HDP model", "LDA model"]
+        "Select page", ["Text search", "Similarity search", "Count vectors", "Tfidf model", "HDP model", "LDA model"]
     )
 
     # selected_year = st.sidebar.selectbox(
@@ -284,6 +310,8 @@ def main():
         # Sidebar search box
         search_term = st.sidebar.text_input("Search abstracts for a word or phrase: ")
         text_search(data, search_term)
+    elif page == "Similarity search":
+        find_similar_abstracts(data)
     elif page == "Count vectors":
         st.subheader("Vectorize by count and visualize with t-SNE")
         visualize_count_vectors(data)
